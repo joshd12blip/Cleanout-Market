@@ -1,60 +1,115 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
-const COMMISSION_RATE = 0.30 // 30%
+/** ====== PLATFORM SETTINGS ====== */
+const COMMISSION_RATE = 0.30 // 30% platform commission on fixed-price sales
+
+/** ====== TYPES (in plain JS via comments) ======
+Item: {
+  id: string,
+  title: string,
+  description: string,
+  price?: number,           // used for fixed-price sale
+  category: string,
+  condition: 'New'|'Excellent'|'Good'|'Fair'|'For Parts',
+  location: string,
+  pickup: boolean,
+  deliveryFee?: number,
+  photos: string[],
+  verifiedSource?: string,
+  // sale type fields:
+  saleType: 'sale' | 'auction',
+  reservePrice?: number,    // auction minimum (must be met)
+  endTime?: string,         // ISO string for auction ending
+  currentBid?: number,      // highest bid so far
+  highestBidder?: string,   // email of highest bidder (demo only)
+  bids?: Array<{amount:number,email:string,time:string}>
+}
+=================================== */
 
 const seedItems = [
+  // Fixed-price example
   {
-    id: "1",
-    title: "Timber Bookshelf (1.8m)",
-    description: "Solid timber shelf from a cleanout. Wiped and inspected. Scuffs consistent with age.",
+    id: '1',
+    title: 'Timber Bookshelf (1.8m)',
+    description: 'Solid timber shelf from a cleanout. Wiped and inspected. Scuffs consistent with age.',
     price: 80,
-    category: "Furniture",
-    condition: "Good",
-    location: "Parramatta, NSW",
+    category: 'Furniture',
+    condition: 'Good',
+    location: 'Parramatta, NSW',
     pickup: true,
-    photos: ["https://images.unsplash.com/photo-1519710164239-da123dc03ef4?q=80&w=1200&auto=format&fit=crop"],
-    verifiedSource: "NDIS Cleanout",
+    photos: ['https://images.unsplash.com/photo-1519710164239-da123dc03ef4?q=80&w=1200&auto=format&fit=crop'],
+    verifiedSource: 'NDIS Cleanout',
+    saleType: 'sale',
   },
+  // Auction example (ends in ~2 hours from first load)
   {
-    id: "2",
-    title: "Samsung 40\" TV (2017)",
-    description: "Power tested. HDMI works. Remote included.",
-    price: 120,
-    category: "Electronics",
-    condition: "Fair",
-    location: "Ryde, NSW",
+    id: '2',
+    title: 'Samsung 40" TV (2017)',
+    description: 'Power tested. HDMI works. Remote included.',
+    category: 'Electronics',
+    condition: 'Fair',
+    location: 'Ryde, NSW',
     pickup: true,
-    photos: ["https://images.unsplash.com/photo-1593359677879-641f2be0d93e?q=80&w=1200&auto=format&fit=crop"],
-    verifiedSource: "NDIS Cleanout",
+    photos: ['https://images.unsplash.com/photo-1593359677879-641f2be0d93e?q=80&w=1200&auto=format&fit=crop'],
+    verifiedSource: 'NDIS Cleanout',
+    saleType: 'auction',
+    reservePrice: 80,
+    endTime: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // +2h
+    currentBid: 60,
+    highestBidder: '',
+    bids: [],
   },
+  // Another fixed-price
   {
-    id: "3",
-    title: "Dining Table (4-seater)",
-    description: "Laminate top, sturdy. Minor wear on edges.",
+    id: '3',
+    title: 'Dining Table (4-seater)',
+    description: 'Laminate top, sturdy. Minor wear on edges.',
     price: 90,
-    category: "Furniture",
-    condition: "Good",
-    location: "Blacktown, NSW",
+    category: 'Furniture',
+    condition: 'Good',
+    location: 'Blacktown, NSW',
     pickup: true,
-    photos: ["https://images.unsplash.com/photo-1519710164239-da123dc03ef4?q=80&w=1200&auto=format&fit=crop"],
-    verifiedSource: "NDIS Cleanout",
+    photos: ['https://images.unsplash.com/photo-1519710164239-da123dc03ef4?q=80&w=1200&auto=format&fit=crop'],
+    verifiedSource: 'NDIS Cleanout',
+    saleType: 'sale',
   },
+  // Books example (sale)
   {
-    id: "4",
-    title: "Assorted Novels Bundle (x20)",
-    description: "Mixed authors. Cleaned and sorted.",
+    id: '4',
+    title: 'Assorted Novels Bundle (x20)',
+    description: 'Mixed authors. Cleaned and sorted.',
     price: 30,
-    category: "Books & Media",
-    condition: "Good",
-    location: "Auburn, NSW",
+    category: 'Books & Media',
+    condition: 'Good',
+    location: 'Auburn, NSW',
     pickup: false,
     deliveryFee: 12,
-    photos: ["https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1200&auto=format&fit=crop"],
-    verifiedSource: "NDIS Cleanout",
+    photos: ['https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1200&auto=format&fit=crop'],
+    verifiedSource: 'NDIS Cleanout',
+    saleType: 'sale',
   },
 ]
 
 const currency = (n) => n.toLocaleString('en-AU', { style: 'currency', currency: 'AUD' })
+
+/** Simple countdown hook for auctions */
+function useCountdown(targetISO) {
+  const [now, setNow] = useState(Date.now())
+  useEffect(() => {
+    if (!targetISO) return
+    const id = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(id)
+  }, [targetISO])
+  if (!targetISO) return { msLeft: 0, ended: false, label: '' }
+  const msLeft = new Date(targetISO).getTime() - now
+  const ended = msLeft <= 0
+  const s = Math.max(0, Math.floor(msLeft / 1000))
+  const h = Math.floor(s / 3600)
+  const m = Math.floor((s % 3600) / 60)
+  const sec = s % 60
+  const label = ended ? 'Ended' : `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`
+  return { msLeft, ended, label }
+}
 
 export default function App(){
   const [items, setItems] = useState(seedItems)
@@ -62,8 +117,20 @@ export default function App(){
   const [category, setCategory] = useState('')
   const [condition, setCondition] = useState('')
   const [cart, setCart] = useState([])
+
+  // New listing modal
   const [showNew, setShowNew] = useState(false)
-  const [newItem, setNewItem] = useState({ category:'Furniture', condition:'Good', pickup:true, photos:[], verifiedSource:'NDIS Cleanout' })
+  const [newItem, setNewItem] = useState({
+    saleType: 'sale',          // 'sale' | 'auction'
+    category:'Furniture',
+    condition:'Good',
+    pickup:true,
+    photos:[],
+    verifiedSource:'NDIS Cleanout',
+  })
+
+  // Bid modal
+  const [bidModal, setBidModal] = useState({ open:false, itemId:'', amount:'', email:'' })
 
   const filtered = useMemo(() => {
     return items.filter(i => {
@@ -75,11 +142,17 @@ export default function App(){
   }, [items, query, category, condition])
 
   const cartItems = cart.map(id => items.find(i => i.id === id)).filter(Boolean)
-  const subtotal = cartItems.reduce((s, i) => s + i.price + (i.deliveryFee ?? 0), 0)
+  const subtotal = cartItems.reduce((s, i) => s + (i.price ?? 0) + (i.deliveryFee ?? 0), 0)
   const commission = subtotal * COMMISSION_RATE
   const total = subtotal + commission
 
   function addToCart(id){
+    const it = items.find(x => x.id === id)
+    if (!it) return
+    if (it.saleType === 'auction') {
+      alert('This is an auction item. Place a bid instead.')
+      return
+    }
     setCart(c => c.includes(id) ? c : [...c, id])
   }
   function removeFromCart(id){
@@ -88,14 +161,22 @@ export default function App(){
 
   function createListing(e){
     e.preventDefault()
-    if(!newItem.title || !newItem.price || !newItem.description || !newItem.location) return alert('Fill all required fields')
+    if(!newItem.title || !newItem.description || !newItem.location) return alert('Fill all required fields')
+
+    // fixed price requires price
+    if (newItem.saleType === 'sale' && !newItem.price) return alert('Enter a price for fixed-price sale')
+    // auction requires reserve and end time
+    if (newItem.saleType === 'auction' && (!newItem.reservePrice || !newItem.endTime)) {
+      return alert('Enter a reserve price and an end time for the auction')
+    }
+
     const id = Math.random().toString(36).slice(2)
     const photos = newItem.photos?.length ? newItem.photos : ["https://images.unsplash.com/photo-1519710164239-da123dc03ef4?q=80&w=1200&auto=format&fit=crop"]
     const item = {
       id,
       title: newItem.title,
       description: newItem.description,
-      price: Number(newItem.price),
+      price: newItem.saleType === 'sale' ? Number(newItem.price) : undefined,
       category: newItem.category,
       condition: newItem.condition,
       location: newItem.location,
@@ -103,14 +184,19 @@ export default function App(){
       deliveryFee: newItem.deliveryFee ? Number(newItem.deliveryFee) : undefined,
       photos,
       verifiedSource: newItem.verifiedSource,
+      saleType: newItem.saleType,
+      reservePrice: newItem.saleType === 'auction' ? Number(newItem.reservePrice) : undefined,
+      endTime: newItem.saleType === 'auction' ? newItem.endTime : undefined,
+      currentBid: newItem.saleType === 'auction' ? 0 : undefined,
+      highestBidder: '',
+      bids: newItem.saleType === 'auction' ? [] : undefined,
     }
     setItems(arr => [item, ...arr])
-    setNewItem({ category:'Furniture', condition:'Good', pickup:true, photos:[], verifiedSource:'NDIS Cleanout' })
+    setNewItem({ saleType:'sale', category:'Furniture', condition:'Good', pickup:true, photos:[], verifiedSource:'NDIS Cleanout' })
     setShowNew(false)
   }
 
   function mailtoOrder(){
-    // Build an email draft the user can send manually (no paid service).
     const lines = [
       'Hi Cleanout Market team,',
       '',
@@ -118,7 +204,7 @@ export default function App(){
       ...cartItems.map(i => `- ${i.title} (${currency(i.price)}${i.deliveryFee ? ` + ${currency(i.deliveryFee)} delivery` : ''})`),
       '',
       `Subtotal: ${currency(subtotal)}`,
-      `Commission (10%): ${currency(commission)}`,
+      `Commission (${Math.round(COMMISSION_RATE*100)}%): ${currency(commission)}`,
       `Total: ${currency(total)}`,
       '',
       'My name:',
@@ -128,22 +214,58 @@ export default function App(){
       'Thanks!'
     ]
     const body = encodeURIComponent(lines.join('\n'))
-    const to = 'hello@cleanout.market'
+    const to = 'hello@cleanout.market' // <-- change to your email
     const subject = encodeURIComponent('Purchase Request - Cleanout Market')
     window.location.href = `mailto:${to}?subject=${subject}&body=${body}`
   }
 
+  function openBidModal(itemId){
+    setBidModal({ open:true, itemId, amount:'', email:'' })
+  }
+  function placeBid(e){
+    e.preventDefault()
+    const it = items.find(x => x.id === bidModal.itemId)
+    if (!it || it.saleType !== 'auction') return
+    const bid = Number(bidModal.amount || 0)
+    if (!bidModal.email || !bid || bid <= 0) { alert('Add your email and a valid bid'); return }
+    // must be higher than current bid
+    const minNext = Math.max(it.currentBid || 0, 0) + 1
+    if (bid < minNext) { alert(`Bid must be at least ${currency(minNext)}`); return }
+    // must be before auction end
+    if (it.endTime && Date.now() > new Date(it.endTime).getTime()) { alert('Auction has ended'); return }
+
+    const updated = items.map(x => {
+      if (x.id !== it.id) return x
+      const bids = [...(x.bids || []), { amount: bid, email: bidModal.email, time: new Date().toISOString() }]
+      return { ...x, currentBid: bid, highestBidder: bidModal.email, bids }
+    })
+    setItems(updated)
+    setBidModal({ open:false, itemId:'', amount:'', email:'' })
+  }
+
+  function AuctionBadge({ item }) {
+    const { label, ended } = useCountdown(item.endTime)
+    const metReserve = (item.currentBid || 0) >= (item.reservePrice || 0)
+    const status = ended ? (metReserve ? 'Auction ended – Reserve met' : 'Auction ended – Reserve NOT met') : `Ends in ${label}`
+    return (
+      <div className="small" style={{marginTop:6}}>
+        <strong>Auction</strong> • {status} • Current bid {currency(item.currentBid || 0)} (Reserve {currency(item.reservePrice || 0)})
+      </div>
+    )
+  }
+
   return (
     <div>
+      {/* Header */}
       <header>
-        <div className="container toolbar">
+        <div className="container" style={{display:'flex', gap:8, alignItems:'center'}}>
           <span style={{display:'flex',alignItems:'center',gap:8}}>
             <span>🚚</span>
             <h1>Cleanout Market</h1>
-            <span className="badge">NDIS‑aligned</span>
+            <span className="badge">NDIS-aligned</span>
           </span>
 
-          <div className="search">
+          <div className="search" style={{marginLeft: 'auto'}}>
             <span className="icon">🔎</span>
             <input placeholder="Search listings, suburbs…" value={query} onChange={e=>setQuery(e.target.value)} />
           </div>
@@ -168,42 +290,64 @@ export default function App(){
         </div>
         <div className="container small" style={{paddingTop:0}}>
           <div className="notice">
-            How this works: resale of items recovered during consent‑approved cleanouts. Commission funds safer removals. Prohibited items: medical devices/consumables, hazardous goods, perishables, child seats, etc.
+            How this works: resale of items recovered during consent-approved cleanouts. Auction items are demo-only until we add a database; fixed-price items can be purchased via the Request-to-Buy email.
           </div>
         </div>
       </header>
 
+      {/* Grid */}
       <main className="container" style={{paddingTop:24}}>
         <div className="grid">
-          {filtered.map(i => (
-            <div className="card" key={i.id}>
-              <img src={i.photos[0]} alt={i.title} />
-              <div className="content">
-                <h3>{i.title} {i.verifiedSource && <span className="pill">✅ {i.verifiedSource}</span>}</h3>
-                <p>{i.description}</p>
-                <div className="row">
-                  <div><strong>{currency(i.price)}</strong></div>
-                  <div className="small">{i.condition} • {i.category}</div>
-                </div>
-                <div className="small">{i.pickup ? 'Pickup only' : `Delivery ${i.deliveryFee ? currency(i.deliveryFee) : 'available'}`} • {i.location}</div>
-                <div className="row" style={{marginTop:10, gap:8}}>
-                  <button className="btn" style={{flex:1}} onClick={()=>addToCart(i.id)}>Add to cart</button>
-                  <button className="btn-outline" style={{flex:1}} onClick={()=>alert('Demo only – add to cart and send purchase email.')}>View</button>
+          {filtered.map(i => {
+            const isAuction = i.saleType === 'auction'
+            return (
+              <div className="card" key={i.id}>
+                <img src={i.photos[0]} alt={i.title} />
+                <div className="content">
+                  <h3>{i.title} {i.verifiedSource && <span className="pill">✅ {i.verifiedSource}</span>}</h3>
+                  <p>{i.description}</p>
+
+                  {isAuction ? (
+                    <>
+                      <div className="row">
+                        <div><strong>Current: {currency(i.currentBid || 0)}</strong></div>
+                        <div className="small">Reserve: {currency(i.reservePrice || 0)}</div>
+                      </div>
+                      <AuctionBadge item={i} />
+                      <div className="row" style={{marginTop:10, gap:8}}>
+                        <button className="btn" style={{flex:1}} onClick={()=>openBidModal(i.id)}>Place bid</button>
+                        <button className="btn-outline" style={{flex:1}} onClick={()=>alert('Auction item – bidding only')}>View</button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="row">
+                        <div><strong>{currency(i.price)}</strong></div>
+                        <div className="small">{i.condition} • {i.category}</div>
+                      </div>
+                      <div className="small">{i.pickup ? 'Pickup only' : `Delivery ${i.deliveryFee ? currency(i.deliveryFee) : 'available'}`} • {i.location}</div>
+                      <div className="row" style={{marginTop:10, gap:8}}>
+                        <button className="btn" style={{flex:1}} onClick={()=>addToCart(i.id)}>Add to cart</button>
+                        <button className="btn-outline" style={{flex:1}} onClick={()=>alert('Demo only – add to cart and send purchase email.')}>View</button>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
 
         {filtered.length === 0 && (
           <div className="small" style={{textAlign:'center', padding:'60px 0'}}>No items match your filters.</div>
         )}
 
+        {/* Footer */}
         <div className="footer">
           <div className="grid">
             <div className="stack">
               <strong>About</strong>
-              <span className="small">Turning potential waste into community value while supporting safer NDIS‑aligned decluttering services.</span>
+              <span className="small">Turning potential waste into community value while supporting safer NDIS-aligned decluttering services.</span>
             </div>
             <div className="stack">
               <strong>Policies</strong>
@@ -222,26 +366,18 @@ export default function App(){
         </div>
       </main>
 
+      {/* New Listing Modal */}
       {showNew && (
         <div className="modal-backdrop" onClick={()=>setShowNew(false)}>
           <div className="modal" onClick={e=>e.stopPropagation()}>
             <h3 style={{marginTop:0}}>Add New Listing</h3>
             <form onSubmit={createListing} className="form-grid">
-              <div className="span-2">
-                <label>Title</label>
-                <input value={newItem.title||''} onChange={e=>setNewItem(s=>({...s, title:e.target.value}))} placeholder="e.g., 2‑Seater Sofa" required/>
-              </div>
-              <div className="span-2">
-                <label>Description</label>
-                <input value={newItem.description||''} onChange={e=>setNewItem(s=>({...s, description:e.target.value}))} placeholder="Brief condition, notes" required/>
-              </div>
               <div>
-                <label>Price (AUD)</label>
-                <input type="number" step="1" value={newItem.price||''} onChange={e=>setNewItem(s=>({...s, price:e.target.value}))} required/>
-              </div>
-              <div>
-                <label>Delivery Fee (optional)</label>
-                <input type="number" step="1" value={newItem.deliveryFee||''} onChange={e=>setNewItem(s=>({...s, deliveryFee:e.target.value}))}/>
+                <label>Sale Type</label>
+                <select value={newItem.saleType} onChange={e=>setNewItem(s=>({...s, saleType:e.target.value}))}>
+                  <option value="sale">Sale (fixed price)</option>
+                  <option value="auction">Auction (reserve + timer)</option>
+                </select>
               </div>
               <div>
                 <label>Category</label>
@@ -253,6 +389,42 @@ export default function App(){
                   <option>Tools</option>
                 </select>
               </div>
+
+              <div className="span-2">
+                <label>Title</label>
+                <input value={newItem.title||''} onChange={e=>setNewItem(s=>({...s, title:e.target.value}))} placeholder="e.g., 2-Seater Sofa" required/>
+              </div>
+              <div className="span-2">
+                <label>Description</label>
+                <input value={newItem.description||''} onChange={e=>setNewItem(s=>({...s, description:e.target.value}))} placeholder="Brief condition, notes" required/>
+              </div>
+
+              {newItem.saleType === 'sale' && (
+                <>
+                  <div>
+                    <label>Price (AUD)</label>
+                    <input type="number" step="1" value={newItem.price||''} onChange={e=>setNewItem(s=>({...s, price:e.target.value}))}/>
+                  </div>
+                  <div>
+                    <label>Delivery Fee (optional)</label>
+                    <input type="number" step="1" value={newItem.deliveryFee||''} onChange={e=>setNewItem(s=>({...s, deliveryFee:e.target.value}))}/>
+                  </div>
+                </>
+              )}
+
+              {newItem.saleType === 'auction' && (
+                <>
+                  <div>
+                    <label>Reserve Price (AUD)</label>
+                    <input type="number" step="1" value={newItem.reservePrice||''} onChange={e=>setNewItem(s=>({...s, reservePrice:e.target.value}))}/>
+                  </div>
+                  <div>
+                    <label>Auction End Time</label>
+                    <input type="datetime-local" value={newItem.endTime||''} onChange={e=>setNewItem(s=>({...s, endTime:e.target.value}))}/>
+                  </div>
+                </>
+              )}
+
               <div>
                 <label>Condition</label>
                 <select value={newItem.condition} onChange={e=>setNewItem(s=>({...s, condition:e.target.value}))}>
@@ -263,10 +435,19 @@ export default function App(){
                   <option>For Parts</option>
                 </select>
               </div>
+              <div>
+                <label>Pickup?</label>
+                <select value={newItem.pickup ? 'yes' : 'no'} onChange={e=>setNewItem(s=>({...s, pickup:e.target.value==='yes'}))}>
+                  <option value="yes">Yes - pickup only</option>
+                  <option value="no">No - delivery possible</option>
+                </select>
+              </div>
+
               <div className="span-2">
                 <label>Pickup Location</label>
                 <input value={newItem.location||''} onChange={e=>setNewItem(s=>({...s, location:e.target.value}))} placeholder="Suburb, State" required/>
               </div>
+
               <div className="span-2">
                 <label>Photo URL (optional)</label>
                 <input placeholder="https://..." onBlur={e=>{
@@ -275,12 +456,39 @@ export default function App(){
                   e.target.value = ''
                 }}/>
                 <div className="small" style={{marginTop:6}}>
-                  Tip: paste an image URL from your phone/computer or use defaults.
+                  Tip: paste an image URL or leave blank to use a default.
                 </div>
               </div>
+
               <div className="span-2" style={{display:'flex',justifyContent:'flex-end',gap:8}}>
                 <button type="button" className="btn-outline" onClick={()=>setShowNew(false)}>Cancel</button>
                 <button className="btn" type="submit">Create Listing</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Bid Modal */}
+      {bidModal.open && (
+        <div className="modal-backdrop" onClick={()=>setBidModal({open:false,itemId:'',amount:'',email:''})}>
+          <div className="modal" onClick={e=>e.stopPropagation()}>
+            <h3 style={{marginTop:0}}>Place a Bid</h3>
+            <form className="form-grid" onSubmit={placeBid}>
+              <div className="span-2">
+                <label>Your Email</label>
+                <input type="email" required value={bidModal.email} onChange={e=>setBidModal(s=>({...s, email:e.target.value}))} placeholder="you@example.com"/>
+              </div>
+              <div className="span-2">
+                <label>Bid Amount (AUD)</label>
+                <input type="number" required step="1" value={bidModal.amount} onChange={e=>setBidModal(s=>({...s, amount:e.target.value}))}/>
+              </div>
+              <div className="span-2" style={{display:'flex',justifyContent:'flex-end',gap:8}}>
+                <button type="button" className="btn-outline" onClick={()=>setBidModal({open:false,itemId:'',amount:'',email:''})}>Cancel</button>
+                <button className="btn" type="submit">Submit Bid</button>
+              </div>
+              <div className="span-2 small notice">
+                Demo note: bids are stored in your browser only. For real auctions (email receipts, anti-sniping extensions, auto-winner emails) we’ll add a free database next.
               </div>
             </form>
           </div>

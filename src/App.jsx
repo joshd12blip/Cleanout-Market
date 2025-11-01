@@ -193,6 +193,14 @@ export default function App(){
       deliveryFee: newItem.deliveryFee ? Number(newItem.deliveryFee) : undefined,
       photos,
       verifiedSource: newItem.verifiedSource,
+      allowPickup: !!newItem.allowPickup,
+allowDelivery: !!newItem.allowDelivery,
+deliveryFee: newItem.deliveryFee ? Number(newItem.deliveryFee) : undefined,
+allowHub: !!newItem.allowHub,
+hubName: newItem.hubName || undefined,
+hubAddress: newItem.hubAddress || undefined,
+hubHandlingFee: newItem.hubHandlingFee ? Number(newItem.hubHandlingFee) : undefined,
+
       saleType: newItem.saleType,
       reservePrice: newItem.saleType === 'auction' ? Number(newItem.reservePrice) : undefined,
       endTime: newItem.saleType === 'auction' ? newItem.endTime : undefined,
@@ -334,7 +342,15 @@ export default function App(){
                         <div><strong>{currency(i.price)}</strong></div>
                         <div className="small">{i.condition} • {i.category}</div>
                       </div>
-                      <div className="small">{i.pickup ? 'Pickup only' : `Delivery ${i.deliveryFee ? currency(i.deliveryFee) : 'available'}`} • {i.location}</div>
+                      <div className="small">
+  {i.allowPickup && 'Pickup'}
+  {i.allowPickup && (i.allowDelivery || i.allowHub) ? ' • ' : ''}
+  {i.allowDelivery && `Delivery${i.deliveryFee ? ' ' + currency(i.deliveryFee) : ''}`}
+  {(i.allowDelivery && i.allowHub) ? ' • ' : ''}
+  {i.allowHub && `${i.hubName || 'Hub pickup'}${i.hubHandlingFee ? ' ' + currency(i.hubHandlingFee) : ''}`}
+  {' • '}{i.location}
+</div>
+
                       <div className="row" style={{marginTop:10, gap:8}}>
                         <button className="btn" style={{flex:1}} onClick={()=>addToCart(i.id)}>Add to cart</button>
                         <button className="btn-outline" style={{flex:1}} onClick={()=>alert('Demo only – add to cart and send purchase email.')}>View</button>

@@ -136,7 +136,17 @@ export default function App(){
   hubName: 'Cleanout Hub – Parramatta',
   hubAddress: '12 Example St, Parramatta NSW',
   hubHandlingFee: '',
-})
+
+      // Specialist services (your team)
+  allowSpecialistPickupToHub: false,    // seller -> hub
+  specialistPickupFee: '',              // e.g. 49
+  allowSpecialistDeliveryFromHub: false,// hub -> buyer
+  specialistDeliveryFee: '',            // e.g. 59
+
+  // Hub time windows (comma separated text the seller types)
+  hubWindowsText: 'Mon 10–12, Tue 2–4',
+
+  })
 
   // Bid modal
   const [bidModal, setBidModal] = useState({ open:false, itemId:'', amount:'', email:'' })

@@ -260,7 +260,7 @@ export default function App(){
       <header>
         <div className="container" style={{display:'flex', gap:8, alignItems:'center'}}>
           <span style={{display:'flex',alignItems:'center',gap:8}}>
-            <span>🚚</span>
+            <img src="/logo.png" alt="Cleanout Market" style={{ width: 40, height: 40, borderRadius: 8 }} />
             <h1>Cleanout Market</h1>
             <span className="badge">NDIS-aligned</span>
           </span>

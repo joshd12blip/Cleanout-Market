@@ -121,13 +121,22 @@ export default function App(){
   // New listing modal
   const [showNew, setShowNew] = useState(false)
   const [newItem, setNewItem] = useState({
-    saleType: 'sale',          // 'sale' | 'auction'
-    category:'Furniture',
-    condition:'Good',
-    pickup:true,
-    photos:[],
-    verifiedSource:'NDIS Cleanout',
-  })
+  saleType: 'sale',       // 'sale' | 'auction'
+  category:'Furniture',
+  condition:'Good',
+  pickup:true,
+  photos:[],
+  verifiedSource:'NDIS Cleanout',
+
+  // NEW DEFAULTS
+  allowPickup: true,
+  allowDelivery: false,
+  deliveryFee: '',
+  allowHub: true,
+  hubName: 'Cleanout Hub – Parramatta',
+  hubAddress: '12 Example St, Parramatta NSW',
+  hubHandlingFee: '',
+})
 
   // Bid modal
   const [bidModal, setBidModal] = useState({ open:false, itemId:'', amount:'', email:'' })

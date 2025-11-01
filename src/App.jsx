@@ -447,6 +447,63 @@ export default function App(){
                 <label>Pickup Location</label>
                 <input value={newItem.location||''} onChange={e=>setNewItem(s=>({...s, location:e.target.value}))} placeholder="Suburb, State" required/>
               </div>
+{/* LOGISTICS OPTIONS */}
+<div className="span-2" style={{borderTop:'1px solid #eee', paddingTop:10, marginTop:4}}>
+  <strong>Logistics</strong>
+</div>
+
+<div>
+  <label>
+    <input type="checkbox"
+      checked={!!newItem.allowPickup}
+      onChange={e=>setNewItem(s=>({...s, allowPickup:e.target.checked}))} />
+    {' '}Pickup at seller
+  </label>
+</div>
+
+<div>
+  <label>
+    <input type="checkbox"
+      checked={!!newItem.allowDelivery}
+      onChange={e=>setNewItem(s=>({...s, allowDelivery:e.target.checked}))} />
+    {' '}Delivery
+  </label>
+</div>
+
+<div>
+  <label>Delivery Fee (optional)</label>
+  <input type="number" step="1" value={newItem.deliveryFee||''}
+    onChange={e=>setNewItem(s=>({...s, deliveryFee:e.target.value}))}/>
+</div>
+
+<div>
+  <label>
+    <input type="checkbox"
+      checked={!!newItem.allowHub}
+      onChange={e=>setNewItem(s=>({...s, allowHub:e.target.checked}))} />
+    {' '}Home Base (Hub) pickup
+  </label>
+</div>
+
+<div>
+  <label>Hub Name</label>
+  <input value={newItem.hubName||''}
+    onChange={e=>setNewItem(s=>({...s, hubName:e.target.value}))}
+    placeholder="Cleanout Hub – Parramatta"/>
+</div>
+
+<div className="span-2">
+  <label>Hub Address</label>
+  <input value={newItem.hubAddress||''}
+    onChange={e=>setNewItem(s=>({...s, hubAddress:e.target.value}))}
+    placeholder="12 Example St, Parramatta NSW"/>
+</div>
+
+<div>
+  <label>Hub Handling Fee (optional)</label>
+  <input type="number" step="1" value={newItem.hubHandlingFee||''}
+    onChange={e=>setNewItem(s=>({...s, hubHandlingFee:e.target.value}))}/>
+</div>
 
               <div className="span-2">
                 <label>Photo URL (optional)</label>

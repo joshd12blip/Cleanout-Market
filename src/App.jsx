@@ -143,6 +143,7 @@ export default function App(){
   allowSpecialistDeliveryFromHub: false,// hub -> buyer
   specialistDeliveryFee: '',            // e.g. 59
 
+
   // Hub time windows (comma separated text the seller types)
   hubWindowsText: 'Mon 10–12, Tue 2–4',
 
@@ -202,7 +203,27 @@ export default function App(){
       pickup: !!newItem.pickup,
       deliveryFee: newItem.deliveryFee ? Number(newItem.deliveryFee) : undefined,
       photos,
-      verifiedSource: newItem.verifiedSource,
+      verifiedSource: newItem.verifiedSource,// NEW logistics + services to save on the item
+allowPickup: !!newItem.allowPickup,
+allowDelivery: !!newItem.allowDelivery,
+
+
+allowHub: !!newItem.allowHub,
+hubName: newItem.hubName || undefined,
+hubAddress: newItem.hubAddress || undefined,
+hubHandlingFee: newItem.hubHandlingFee ? Number(newItem.hubHandlingFee) : undefined,
+
+allowSpecialistPickupToHub: !!newItem.allowSpecialistPickupToHub,
+specialistPickupFee: newItem.specialistPickupFee ? Number(newItem.specialistPickupFee) : undefined,
+
+allowSpecialistDeliveryFromHub: !!newItem.allowSpecialistDeliveryFromHub,
+specialistDeliveryFee: newItem.specialistDeliveryFee ? Number(newItem.specialistDeliveryFee) : undefined,
+
+hubWindows: (newItem.hubWindowsText || '')
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean),
+
       allowPickup: !!newItem.allowPickup,
 allowDelivery: !!newItem.allowDelivery,
 deliveryFee: newItem.deliveryFee ? Number(newItem.deliveryFee) : undefined,

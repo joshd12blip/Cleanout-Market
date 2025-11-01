@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
 
-const COMMISSION_RATE = 0.10 // 10%
+const COMMISSION_RATE = 0.30 // 30%
 
 const seedItems = [
   {

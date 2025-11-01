@@ -444,6 +444,48 @@ hubHandlingFee: newItem.hubHandlingFee ? Number(newItem.hubHandlingFee) : undefi
                     <label>Delivery Fee (optional)</label>
                     <input type="number" step="1" value={newItem.deliveryFee||''} onChange={e=>setNewItem(s=>({...s, deliveryFee:e.target.value}))}/>
                   </div>
+                  {/* Specialist services */}
+<div className="span-2" style={{borderTop:'1px solid #eee', paddingTop:10, marginTop:4}}>
+  <strong>Specialist Services (your team)</strong>
+</div>
+
+<div>
+  <label>
+    <input type="checkbox"
+      checked={!!newItem.allowSpecialistPickupToHub}
+      onChange={e=>setNewItem(s=>({...s, allowSpecialistPickupToHub:e.target.checked}))}/>
+    {' '}Pickup from seller to Hub
+  </label>
+</div>
+<div>
+  <label>Specialist Pickup Fee (optional)</label>
+  <input type="number" step="1" value={newItem.specialistPickupFee||''}
+    onChange={e=>setNewItem(s=>({...s, specialistPickupFee:e.target.value}))}/>
+</div>
+
+<div>
+  <label>
+    <input type="checkbox"
+      checked={!!newItem.allowSpecialistDeliveryFromHub}
+      onChange={e=>setNewItem(s=>({...s, allowSpecialistDeliveryFromHub:e.target.checked}))}/>
+    {' '}Delivery from Hub to buyer
+  </label>
+</div>
+<div>
+  <label>Specialist Delivery Fee (optional)</label>
+  <input type="number" step="1" value={newItem.specialistDeliveryFee||''}
+    onChange={e=>setNewItem(s=>({...s, specialistDeliveryFee:e.target.value}))}/>
+</div>
+
+<div className="span-2">
+  <label>Hub Time Windows (comma separated)</label>
+  <input value={newItem.hubWindowsText||''}
+    onChange={e=>setNewItem(s=>({...s, hubWindowsText:e.target.value}))}
+    placeholder="Mon 10–12, Tue 2–4"/>
+</div>
+                  
+                  
+                  
                 </>
               )}
 

@@ -391,12 +391,18 @@ hubHandlingFee: newItem.hubHandlingFee ? Number(newItem.hubHandlingFee) : undefi
                         <div className="small">{i.condition} • {i.category}</div>
                       </div>
                       <div className="small">
-  {i.allowPickup && 'Pickup'}
-  {i.allowPickup && (i.allowDelivery || i.allowHub) ? ' • ' : ''}
-  {i.allowDelivery && `Delivery${i.deliveryFee ? ' ' + currency(i.deliveryFee) : ''}`}
-  {(i.allowDelivery && i.allowHub) ? ' • ' : ''}
-  {i.allowHub && `${i.hubName || 'Hub pickup'}${i.hubHandlingFee ? ' ' + currency(i.hubHandlingFee) : ''}`}
-  {' • '}{i.location}
+ {i.optionHubDrop && `Seller will drop at ${i.hubName || 'Hub'}${i.hubDropWindows?.length ? ' (' + i.hubDropWindows[0] + ')' : ''}`}
+{i.optionHubDrop && (i.optionSellerDelivery || i.optionSupportPickupToHub || i.optionBuyerPickupAtSeller) ? ' • ' : ''}
+
+{i.optionSellerDelivery && `Seller delivery${i.deliveryFee ? ' ' + currency(i.deliveryFee) : ''}${i.sellerDeliveryWindows?.length ? ' (' + i.sellerDeliveryWindows[0] + ')' : ''}`}
+{i.optionSellerDelivery && (i.optionSupportPickupToHub || i.optionBuyerPickupAtSeller) ? ' • ' : ''}
+
+{i.optionSupportPickupToHub && `Support worker → Hub`}
+{i.optionSupportPickupToHub && i.optionBuyerPickupAtSeller ? ' • ' : ''}
+
+{i.optionBuyerPickupAtSeller && `Buyer pickup at seller${i.buyerPickupSafePlace ? ' (safe place OK)' : (i.buyerPickupWindows?.length ? ' (' + i.buyerPickupWindows[0] + ')' : '')}`}
+{' • '}{i.location}
+
 </div>
 
                       <div className="row" style={{marginTop:10, gap:8}}>

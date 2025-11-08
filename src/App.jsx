@@ -117,8 +117,11 @@ export default function App(){
   const [category, setCategory] = useState('')
   const [condition, setCondition] = useState('')
   const [cart, setCart] = useState([])
-  // Buyer choices in the cart (per item)
+  // modal open/close
+const [showCart, setShowCart] = useState(false);
+// buyer choices per item
 const [cartChoices, setCartChoices] = useState({});
+
 
 
   // New listing modal
@@ -244,14 +247,6 @@ hubWindows: (newItem.hubWindowsText || '')
   .map(s => s.trim())
   .filter(Boolean),
 
-      allowPickup: !!newItem.allowPickup,
-allowDelivery: !!newItem.allowDelivery,
-deliveryFee: newItem.deliveryFee ? Number(newItem.deliveryFee) : undefined,
-allowHub: !!newItem.allowHub,
-hubName: newItem.hubName || undefined,
-hubAddress: newItem.hubAddress || undefined,
-hubHandlingFee: newItem.hubHandlingFee ? Number(newItem.hubHandlingFee) : undefined,
-
       saleType: newItem.saleType,
       reservePrice: newItem.saleType === 'auction' ? Number(newItem.reservePrice) : undefined,
       endTime: newItem.saleType === 'auction' ? newItem.endTime : undefined,
@@ -265,27 +260,45 @@ hubHandlingFee: newItem.hubHandlingFee ? Number(newItem.hubHandlingFee) : undefi
   }
 
   function mailtoOrder(){
-    const lines = [
-      'Hi Cleanout Market team,',
-      '',
-      'I would like to purchase:',
-      ...cartItems.map(i => `- ${i.title} (${currency(i.price)}${i.deliveryFee ? ` + ${currency(i.deliveryFee)} delivery` : ''})`),
-      '',
-      `Subtotal: ${currency(subtotal)}`,
-      `Commission (${Math.round(COMMISSION_RATE*100)}%): ${currency(commission)}`,
-      `Total: ${currency(total)}`,
-      '',
-      'My name:',
-      'My phone:',
-      'Preferred pickup/delivery window:',
-      '',
-      'Thanks!'
-    ]
-    const body = encodeURIComponent(lines.join('\n'))
-    const to = 'hello@cleanout.market' // <-- change to your email
-    const subject = encodeURIComponent('Purchase Request - Cleanout Market')
-    window.location.href = `mailto:${to}?subject=${subject}&body=${body}`
-  }
+  const lines = [
+    'Hi Cleanout Market team,',
+    '',
+    'I would like to purchase:',
+    ...cartItems.map(i => {
+      const c = cartChoices[i.id] || {};
+      const allowed = [
+        (i.optionHubDrop || i.optionSupportPickupToHub) ? `Hub pickup at ${i.hubName || 'Hub'}` : null,
+        i.optionSellerDelivery ? `Seller delivery${i.deliveryFee ? ' ' + currency(i.deliveryFee) : ''}` : null,
+        i.optionBuyerPickupAtSeller ? `Pickup at seller${i.buyerPickupSafePlace ? ' (safe place OK)' : ''}` : null,
+      ].filter(Boolean).join(' / ');
+
+      const choiceLabel =
+        c.method === 'hub'
+          ? `Hub pickup at ${i.hubName || 'Hub'} (${c.time || 'time TBD'})`
+          : c.method === 'seller-delivery'
+          ? `Seller delivery to ${c.address || '(address TBD)'} ${c.safeDrop ? '(safe drop OK)' : '(time ' + (c.time || 'TBD') + ')'}`
+          : c.method === 'pickup-seller'
+          ? `Pickup at seller ${i.buyerPickupSafePlace ? '(safe place OK)' : 'at ' + (c.time || 'time TBD')}`
+          : 'No method chosen';
+
+      return `- ${i.title} — ${currency(i.price || 0)}${i.deliveryFee ? ` + ${currency(i.deliveryFee)} delivery` : ''}\n  Allowed: ${allowed}\n  My choice: ${choiceLabel}`;
+    }),
+    '',
+    `Subtotal: ${currency(subtotal)}`,
+    `Commission (${Math.round(COMMISSION_RATE*100)}%): ${currency(commission)}`,
+    `Total: ${currency(total)}`,
+    '',
+    'My name:',
+    'My phone:',
+    '',
+    'Thanks!'
+  ];
+
+  const body = encodeURIComponent(lines.join('\n'));
+  const to = 'hello@cleanout.market'; // change to your email
+  const subject = encodeURIComponent('Purchase Request - Cleanout Market');
+  window.location.href = `mailto:${to}?subject=${subject}&body=${body}`;
+}
 
   function openBidModal(itemId){
     setBidModal({ open:true, itemId, amount:'', email:'' })
@@ -361,7 +374,163 @@ hubHandlingFee: newItem.hubHandlingFee ? Number(newItem.hubHandlingFee) : undefi
             How this works: resale of items recovered during consent-approved cleanouts. Auction items are demo-only until we add a database; fixed-price items can be purchased via the Request-to-Buy email.
           </div>
         </div>
+        <button
+          className="btn"
+          style={{ marginLeft: 8 }}
+          onClick={()=>setShowCart(true)}
+        >
+          Cart ({cart.length})
+        </button>
+
       </header>
+      {/* ====== CART MODAL ====== */}
+{showCart && (
+  <div className="modal-backdrop" onClick={()=>setShowCart(false)}>
+    <div className="modal" onClick={e=>e.stopPropagation()}>
+      <h3 style={{marginTop:0}}>Your Cart</h3>
+
+      {cartItems.length === 0 ? (
+        <div className="small">Your cart is empty.</div>
+      ) : (
+        cartItems.map(item => {
+          // Build methods from seller options
+          const methods = [
+            (item.optionHubDrop || item.optionSupportPickupToHub)
+              ? { key: 'hub', label: `Pick up at ${item.hubName || 'Hub'}` }
+              : null,
+            item.optionSellerDelivery
+              ? { key: 'seller-delivery', label: `Seller delivery${item.deliveryFee ? ' ' + currency(item.deliveryFee) : ''}` }
+              : null,
+            item.optionBuyerPickupAtSeller
+              ? { key: 'pickup-seller', label: 'Pick up at seller' }
+              : null,
+          ].filter(Boolean);
+
+          const choice = cartChoices[item.id] || { method: methods[0]?.key || '' };
+
+          return (
+            <div key={item.id} style={{borderTop:'1px solid #eee', paddingTop:10, marginTop:10}}>
+              <div><strong>{item.title}</strong></div>
+              <div className="small" style={{opacity:.8}}>
+                {currency(item.price || 0)}{item.deliveryFee ? ` + ${currency(item.deliveryFee)} delivery` : ''}
+              </div>
+
+              {methods.length === 0 ? (
+                <div className="small" style={{marginTop:6}}>No buyer methods available for this item.</div>
+              ) : (
+                <div className="small" style={{marginTop:6}}>
+                  {methods.map(m => (
+                    <label key={m.key} style={{ display: 'block', marginTop: 6 }}>
+                      <input
+                        type="radio"
+                        name={`method-${item.id}`}
+                        checked={choice.method === m.key}
+                        onChange={() =>
+                          setCartChoices(o => ({ ...o, [item.id]: { ...choice, method: m.key } }))
+                        }
+                      />{' '}
+                      {m.label}
+                    </label>
+                  ))}
+                </div>
+              )}
+
+              {/* Hub pickup */}
+              {choice.method === 'hub' && (
+                <div style={{ marginTop: 6 }}>
+                  <div className="small">Choose your preferred Hub pickup time:</div>
+                  <input
+                    value={choice.time || ''}
+                    onChange={e =>
+                      setCartChoices(o => ({ ...o, [item.id]: { ...choice, time: e.target.value } }))
+                    }
+                    placeholder="e.g., Thu 2–3pm"
+                  />
+                </div>
+              )}
+
+              {/* Seller delivery */}
+              {choice.method === 'seller-delivery' && (
+                <>
+                  <div style={{ marginTop: 6 }}>
+                    <label>Delivery address:&nbsp;</label>
+                    <input
+                      value={choice.address || ''}
+                      onChange={e =>
+                        setCartChoices(o => ({ ...o, [item.id]: { ...choice, address: e.target.value } }))
+                      }
+                      placeholder="Street, suburb, postcode"
+                    />
+                  </div>
+                  <div style={{ marginTop: 6 }}>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={!!choice.safeDrop}
+                        onChange={e =>
+                          setCartChoices(o => ({ ...o, [item.id]: { ...choice, safeDrop: e.target.checked } }))
+                        }
+                      />{' '}
+                      I allow safe drop (any time is OK)
+                    </label>
+                  </div>
+                  {!choice.safeDrop && (
+                    <div style={{ marginTop: 6 }}>
+                      <label>Preferred delivery time:&nbsp;</label>
+                      <input
+                        value={choice.time || ''}
+                        onChange={e =>
+                          setCartChoices(o => ({ ...o, [item.id]: { ...choice, time: e.target.value } }))
+                        }
+                        placeholder="Pick a window, e.g., Wed 5–7pm"
+                      />
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Buyer pickup at seller */}
+              {choice.method === 'pickup-seller' && (
+                <>
+                  {!item.buyerPickupSafePlace ? (
+                    <div style={{ marginTop: 6 }}>
+                      <label>Preferred pickup time:&nbsp;</label>
+                      <input
+                        value={choice.time || ''}
+                        onChange={e =>
+                          setCartChoices(o => ({ ...o, [item.id]: { ...choice, time: e.target.value } }))
+                        }
+                        placeholder="e.g., Sun 10–11am"
+                      />
+                    </div>
+                  ) : (
+                    <div className="small" style={{ marginTop: 6 }}>
+                      Seller allows safe-place pickup — time is flexible. Optional note:
+                      <input
+                        style={{ display: 'block', marginTop: 6 }}
+                        value={choice.time || ''}
+                        onChange={e =>
+                          setCartChoices(o => ({ ...o, [item.id]: { ...choice, time: e.target.value } }))
+                        }
+                        placeholder="e.g., Sat morning"
+                      />
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          );
+        })
+      )}
+
+      <div className="row" style={{marginTop:12, gap:8}}>
+        <button className="btn" onClick={mailtoOrder}>Send Request</button>
+        <button className="btn-outline" onClick={()=>setShowCart(false)}>Close</button>
+      </div>
+    </div>
+  </div>
+)}
+
 
       {/* Grid */}
       <main className="container" style={{paddingTop:24}}>

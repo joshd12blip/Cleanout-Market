@@ -121,31 +121,37 @@ export default function App(){
   // New listing modal
   const [showNew, setShowNew] = useState(false)
   const [newItem, setNewItem] = useState({
-  saleType: 'sale',       // 'sale' | 'auction'
-  category:'Furniture',
-  condition:'Good',
-  pickup:true,
-  photos:[],
-  verifiedSource:'NDIS Cleanout',
+  // core
+  saleType: 'sale',
+  category: 'Furniture',
+  condition: 'Good',
+  pickup: true,
+  photos: [],
+  verifiedSource: 'NDIS Cleanout',
 
-  // NEW DEFAULTS
-  allowPickup: true,
-  allowDelivery: false,
-  deliveryFee: '',
+  // Hub identity (you already had these)
   allowHub: true,
   hubName: 'Cleanout Hub – Parramatta',
   hubAddress: '12 Example St, Parramatta NSW',
   hubHandlingFee: '',
 
-      // Specialist services (your team)
-  allowSpecialistPickupToHub: false,    // seller -> hub
-  specialistPickupFee: '',              // e.g. 49
-  allowSpecialistDeliveryFromHub: false,// hub -> buyer
-  specialistDeliveryFee: '',            // e.g. 59
+  // >>> NEW: seller logistics model
+  primaryOption: '',               // 'hub-drop' | 'seller-delivery' | 'support-to-hub'
+  // 1) Drop at Hub
+  hubDropWindowsText: '',          // e.g. "Mon 10–12, Tue 2–4"
+  // 2) Seller delivers
+  sellerDeliveryWindowsText: '',   // e.g. "Wed 5–7pm, Sat 9–11am"
+  // 3) Support worker to Hub (details later)
+  supportToHub: false,             // we infer from primaryOption, but keep a flag for clarity
 
+  // 4) Buyer pickup at seller (extra togglable option)
+  allowBuyerPickupAtSeller: false,
+  buyerPickupWindowsText: '',      // optional if safe place
+  buyerPickupSafePlace: false,     // if true, no time required
 
-  // Hub time windows (comma separated text the seller types)
-  hubWindowsText: 'Mon 10–12, Tue 2–4',
+  // pricing you may still want to keep
+  deliveryFee: '',                 // fee used for "seller delivery" if you charge
+  hubWindowsText: 'Mon 10–12, Tue 2–4', // keep general hub availability if you show it
 
   })
 

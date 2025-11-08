@@ -210,19 +210,30 @@ export default function App(){
       deliveryFee: newItem.deliveryFee ? Number(newItem.deliveryFee) : undefined,
       photos,
       verifiedSource: newItem.verifiedSource,// NEW logistics + services to save on the item
-allowPickup: !!newItem.allowPickup,
-allowDelivery: !!newItem.allowDelivery,
+// PRIMARY (exactly one)
+primaryOption: newItem.primaryOption,
+optionHubDrop: newItem.primaryOption === 'hub-drop',
+hubDropWindows: (newItem.hubDropWindowsText || '')
+  .split(',').map(s => s.trim()).filter(Boolean),
 
+optionSellerDelivery: newItem.primaryOption === 'seller-delivery',
+sellerDeliveryWindows: (newItem.sellerDeliveryWindowsText || '')
+  .split(',').map(s => s.trim()).filter(Boolean),
+deliveryFee: newItem.deliveryFee ? Number(newItem.deliveryFee) : undefined,
 
-allowHub: !!newItem.allowHub,
+optionSupportPickupToHub: newItem.primaryOption === 'support-to-hub',
+
+// OPTIONAL: buyer pickup at seller
+optionBuyerPickupAtSeller: !!newItem.allowBuyerPickupAtSeller,
+buyerPickupWindows: (newItem.buyerPickupWindowsText || '')
+  .split(',').map(s => s.trim()).filter(Boolean),
+buyerPickupSafePlace: !!newItem.buyerPickupSafePlace,
+
+// Keep hub identity on the item
 hubName: newItem.hubName || undefined,
 hubAddress: newItem.hubAddress || undefined,
 hubHandlingFee: newItem.hubHandlingFee ? Number(newItem.hubHandlingFee) : undefined,
 
-allowSpecialistPickupToHub: !!newItem.allowSpecialistPickupToHub,
-specialistPickupFee: newItem.specialistPickupFee ? Number(newItem.specialistPickupFee) : undefined,
-
-allowSpecialistDeliveryFromHub: !!newItem.allowSpecialistDeliveryFromHub,
 specialistDeliveryFee: newItem.specialistDeliveryFee ? Number(newItem.specialistDeliveryFee) : undefined,
 
 hubWindows: (newItem.hubWindowsText || '')

@@ -117,6 +117,9 @@ export default function App(){
   const [category, setCategory] = useState('')
   const [condition, setCondition] = useState('')
   const [cart, setCart] = useState([])
+  // Buyer choices in the cart (per item)
+const [cartChoices, setCartChoices] = useState({});
+
 
   // New listing modal
   const [showNew, setShowNew] = useState(false)

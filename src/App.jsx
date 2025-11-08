@@ -471,6 +471,108 @@ hubHandlingFee: newItem.hubHandlingFee ? Number(newItem.hubHandlingFee) : undefi
                     <label>Delivery Fee (optional)</label>
                     <input type="number" step="1" value={newItem.deliveryFee||''} onChange={e=>setNewItem(s=>({...s, deliveryFee:e.target.value}))}/>
                   </div>
+                  {/* -------- SELLER LOGISTICS -------- */}
+<div className="span-2" style={{borderTop:'1px solid #eee', paddingTop:10, marginTop:10}}>
+  <strong>How will this item be handled?</strong>
+  <div className="small">Choose ONE primary option (1–3). You may also enable buyer pickup (4).</div>
+</div>
+
+{/* 1) Drop at Hub */}
+<div>
+  <label>
+    <input type="radio" name="primaryOption"
+      checked={newItem.primaryOption === 'hub-drop'}
+      onChange={()=>setNewItem(s=>({...s, primaryOption:'hub-drop'}))}
+    /> 1) I will drop the item at the Cleanout Hub
+  </label>
+  {newItem.primaryOption === 'hub-drop' && (
+    <div className="small" style={{marginTop:6}}>
+      <div><b>Drop-off time(s)</b> (comma separated):</div>
+      <input
+        value={newItem.hubDropWindowsText||''}
+        onChange={e=>setNewItem(s=>({...s, hubDropWindowsText:e.target.value}))}
+        placeholder="Mon 10–12, Tue 2–4"
+      />
+    </div>
+  )}
+</div>
+
+{/* 2) Seller delivers to buyer */}
+<div style={{marginTop:8}}>
+  <label>
+    <input type="radio" name="primaryOption"
+      checked={newItem.primaryOption === 'seller-delivery'}
+      onChange={()=>setNewItem(s=>({...s, primaryOption:'seller-delivery'}))}
+    /> 2) I can deliver it to the buyer
+  </label>
+  {newItem.primaryOption === 'seller-delivery' && (
+    <div className="small" style={{marginTop:6}}>
+      <div><b>Delivery window(s)</b> (comma separated):</div>
+      <input
+        value={newItem.sellerDeliveryWindowsText||''}
+        onChange={e=>setNewItem(s=>({...s, sellerDeliveryWindowsText:e.target.value}))}
+        placeholder="Wed 5–7pm, Sat 9–11am"
+      />
+      <div style={{marginTop:6}}>
+        <label>Delivery fee (optional)</label>
+        <input type="number" step="1"
+          value={newItem.deliveryFee||''}
+          onChange={e=>setNewItem(s=>({...s, deliveryFee:e.target.value}))}
+        />
+      </div>
+    </div>
+  )}
+</div>
+
+{/* 3) Support worker → Hub (details later) */}
+<div style={{marginTop:8}}>
+  <label>
+    <input type="radio" name="primaryOption"
+      checked={newItem.primaryOption === 'support-to-hub'}
+      onChange={()=>setNewItem(s=>({...s, primaryOption:'support-to-hub', supportToHub:true}))}
+    /> 3) A support worker will pick up and take it to the Hub
+  </label>
+  {newItem.primaryOption === 'support-to-hub' && (
+    <div className="small" style={{marginTop:6}}>
+      (We’ll contact you to arrange pickup.)
+    </div>
+  )}
+</div>
+
+{/* 4) Optional: buyer pickup at seller */}
+<div className="span-2" style={{borderTop:'1px solid #eee', paddingTop:10, marginTop:10}}>
+  <strong>Optional: also allow buyer pickup (4)</strong>
+</div>
+<div>
+  <label>
+    <input type="checkbox"
+      checked={!!newItem.allowBuyerPickupAtSeller}
+      onChange={e=>setNewItem(s=>({...s, allowBuyerPickupAtSeller:e.target.checked}))}
+    /> 4) Buyer can pick up from me
+  </label>
+
+  {newItem.allowBuyerPickupAtSeller && (
+    <>
+      <div className="small" style={{marginTop:6}}>
+        <label>Pickup window(s) (comma separated)</label>
+        <input
+          value={newItem.buyerPickupWindowsText||''}
+          onChange={e=>setNewItem(s=>({...s, buyerPickupWindowsText:e.target.value}))}
+          placeholder="Thu 3–5pm, Sun 9–11am"
+        />
+      </div>
+      <div className="small" style={{marginTop:6}}>
+        <label>
+          <input type="checkbox"
+            checked={!!newItem.buyerPickupSafePlace}
+            onChange={e=>setNewItem(s=>({...s, buyerPickupSafePlace:e.target.checked}))}
+          /> I will leave in a safe place (pickup any time)
+        </label>
+      </div>
+    </>
+  )}
+</div>
+
                   {/* Specialist services */}
 <div className="span-2" style={{borderTop:'1px solid #eee', paddingTop:10, marginTop:4}}>
   <strong>Specialist Services (your team)</strong>
